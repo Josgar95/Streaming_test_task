@@ -12,22 +12,3 @@ For the first assignment i've noticed these 3 bugs:
 
 
 
-## Installazione
-
-Istruzioni per installare il progetto.
-
-## Uso
-
-Come avviare o usare il progetto.
-
-## API / Funzionalità
-
-Elenco delle funzioni principali.
-
-## Struttura del progetto
-
-Spiegazione delle cartelle.
-
-## Licenza
-
-Tipo di licenza (MIT, GPL, ecc.)
