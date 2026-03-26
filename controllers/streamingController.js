@@ -1,6 +1,37 @@
 const fs = require('fs');
 const path = require('path');
+const { Op } = require("sequelize");
 
+const { getStreamingContent } = require("../services/streamingService");
+
+exports.getAllStreamingContent = async (req, res) => {
+    try {
+        const genre = req.query.genre || null;
+        const data = await getStreamingContent(genre, limit, offset);
+
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+exports.getStreamsFromDb = async (limit = 10, offset = 0) => {
+    try {
+        const query = `
+      SELECT *
+      FROM streaming_content
+      ORDER BY id
+      LIMIT $1 OFFSET $2
+    `;
+
+        const result = await pool.query(query, [limit, offset]);
+        return result.rows;
+
+    } catch (err) {
+        throw new Error(err.message);
+    }
+};
 const filePath = path.join(__dirname, '../data/streaming.json');
 
 const readDB = () => {

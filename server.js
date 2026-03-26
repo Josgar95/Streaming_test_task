@@ -1,6 +1,10 @@
+require("dotenv").config();
 const express = require('express');
 const app = express();
-const streamingRoutes = require('./routes/streamingRoutes');
+const streamingRoutes = require('./routes/streaming');
+const swaggerDocs = require('./swagger/swagger'); // importa la funzione
+
+swaggerDocs(app); // inizializza swagger
 
 app.use(express.json());
 
