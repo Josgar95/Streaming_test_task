@@ -1,56 +1,42 @@
 const fs = require('fs');
 const path = require('path');
-const { Op } = require("sequelize");
+const pool = require('../config/db');
 
-const { getStreamingContent } = require("../services/streamingService");
-
-exports.getAllStreamingContent = async (req, res) => {
+async function StreamingContent(titleFilter) {
     try {
-        const genre = req.query.genre || null;
-        const data = await getStreamingContent(genre, limit, offset);
+        let query = `
+            SELECT *
+            FROM streaming_content
+        `;
 
-        res.json(data);
+        let params = [];
+
+        if (titleFilter) {
+            if (titleFilter !== "" && titleFilter !== "undefined" && titleFilter !== "null"
+                && titleFilter !== null && titleFilter !== undefined && titleFilter !== NaN) {
+                query += " WHERE title ILIKE $1";
+                params.push(`%${titleFilter}%`);
+            }
+        }
+
+        query += " ORDER BY id ASC";
+
+        const result = await pool.query(query, params);
+        if (result.rows.length === 0) {
+            return new Error('No streaming content found');
+        } else if (result instanceof Error) {
+            throw result;
+        } else {
+            return result.rows;
+        }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        throw new Error(error.message);
     }
-};
+}
 
-
-exports.getStreamsFromDb = async (limit = 10, offset = 0) => {
-    try {
-        const query = `
-      SELECT *
-      FROM streaming_content
-      ORDER BY id
-      LIMIT $1 OFFSET $2
-    `;
-
-        const result = await pool.query(query, [limit, offset]);
-        return result.rows;
-
-    } catch (err) {
-        throw new Error(err.message);
-    }
-};
-const filePath = path.join(__dirname, '../data/streaming.json');
-
-const readDB = () => {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-};
-
-const writeDB = (data) => {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-};
-
-// GET all streams
-exports.getStreams = (req, res) => {
-    const streams = readDB();
-    // add pagination
-    res.json(streams);
-};
 
 // GET single stream
-exports.getStreamDetails = (req, res) => {
+async function getStreamDetails(req, res) {
     const streams = readDB();
     const stream = streams.find(s => s.id == req.params.id);
 
@@ -63,7 +49,7 @@ exports.getStreamDetails = (req, res) => {
 };
 
 // CREATE stream
-exports.createStream = (req, res) => {
+async function createStream(req, res) {
     const streams = readDB();
     const newStream = {
         //elements from req.body
@@ -76,7 +62,7 @@ exports.createStream = (req, res) => {
 };
 
 // UPDATE stream
-exports.updateStream = (req, res) => {
+async function updateStream(req, res) {
     const streams = readDB();
     // add operations to update the stream based on req.params.id and req.body
     writeDB(streams);
@@ -85,9 +71,17 @@ exports.updateStream = (req, res) => {
 };
 
 // DELETE stream
-exports.deleteStream = (req, res) => {
+async function deleteStream(req, res) {
     const streams = readDB();
     // add operations to delete the stream based on req.params.id
 
     res.json({ message: 'Stream deleted' });
 };
+
+module.exports = {
+    StreamingContent,
+    getStreamDetails,
+    createStream,
+    updateStream,
+    deleteStream
+}

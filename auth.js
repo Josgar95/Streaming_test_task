@@ -2,8 +2,9 @@
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
 
+    const authHeader = req.headers.authorization;
+    console.log("AUTH HEADER:", req.headers.authorization);
     // BUG: The original code did not check if authHeader exists before splitting it.
     if (!authHeader) {
         return res.status(401).json({ error: 'No token provided' });

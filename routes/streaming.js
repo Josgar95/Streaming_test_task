@@ -8,24 +8,22 @@ const {
     updateStream,
     deleteStream
 } = require('../controllers/streamingController');
-const { Op, fn, col, where } = require("sequelize");
-const { getAllStreamingContent } = require("../controllers/streamingController");
 
 
 /**
  * @swagger
- * /streams:
+ * /api/streaming:
  *   get:
  *     summary: Obtain all streaming content
- *     description: Return a list of streaming content with pagination and optional genre filter.
+ *     description: Return a list of streaming content with pagination and optional title filter.
  *     tags:
  *       - Streaming
  *     parameters:
  *       - in: query
- *         name: genre
+ *         name: title
  *         schema:
  *           type: string
- *         description: Filter streaming content by genre (case-insensitive)
+ *         description: Filter streaming content by title (case-insensitive)
  *     responses:
  *       200:
  *         description: Streaming content list
@@ -38,72 +36,26 @@ const { getAllStreamingContent } = require("../controllers/streamingController")
  *       500:
  *         description: Internal Server Error
  */
-router.get("/", auth, getAllStreamingContent);
-
-
-
-// routes/streaming.js — performance issue present
-
-/**
- * @swagger
- * /streams:
- *   get:
- *     summary: Ottiene tutti i contenuti streaming
- *     description: Restituisce una lista di contenuti con paginazione e filtro opzionale per genere.
- *     tags:
- *       - Streaming
- *     parameters:
- *       - in: query
- *         name: genre
- *         schema:
- *           type: string
- *         description: Filtra i contenuti per genere (case-insensitive)
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *         description: Numero di risultati per pagina
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Numero della pagina
- *     responses:
- *       200:
- *         description: Lista dei contenuti streaming
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/StreamingContent'
- *       500:
- *         description: Errore interno del server
- */
-
 router.get('/', auth, async (req, res) => {
     try {
-        const genreFilter = req.query.genre ? req.query.genre.toLowerCase() : null;
-        const allContent = await StreamingContent.findAll({
-            where: genreFilter
-                ? where(fn('LOWER', col('genre')), genreFilter)
-                : undefined,
-
-            limit: 10,
-            offset: 0
-        });
-
-        res.json(allContent);
+        const allContent = await StreamingContent(req.query.title);
+        if (allContent instanceof Error) {
+            throw allContent;
+        }
+        else {
+            res.json(allContent);
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
+
+
+
 /**
  * @swagger
- * /streaming/{id}:
+ * /api/streaming/{id}:
  *   get:
  *     summary: Get stream details by ID
  *     tags: [Streaming]
@@ -125,7 +77,7 @@ router.get('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /streams:
+ * /api/streaming/create_stream:
  *   post:
  *     summary: Create a new stream
  *     tags: [Streaming]
@@ -143,7 +95,7 @@ router.post('/', auth, createStream);
 
 /**
  * @swagger
- * /streams/{id}:
+ * /api/streaming/update_stream/{id}:
  *   put:
  *     summary: Update a stream
  *     tags: [Streaming]
@@ -169,7 +121,7 @@ router.put('/:id', auth, updateStream);
 
 /**
  * @swagger
- * /streams/{id}:
+ * /api/streaming/{id}:
  *   delete:
  *     summary: Delete a stream
  *     tags: [Streaming]
