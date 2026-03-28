@@ -35,6 +35,25 @@ const options = {
                         created_at: { type: "string", format: "date-time" },
                         updated_at: { type: "string", format: "date-time" }
                     }
+                },
+                StreamingCreate: {
+                    type: "object",
+                    required: ["title", "description", "thumbnail_url", "video_url"],
+                    properties: {
+                        title: { type: "string" },
+                        description: { type: "string" },
+                        thumbnail_url: { type: "string" },
+                        video_url: { type: "string" }
+                    }
+                },
+                StreamingUpdate: {
+                    type: "object",
+                    properties: {
+                        title: { type: "string" },
+                        description: { type: "string" },
+                        thumbnail_url: { type: "string" },
+                        video_url: { type: "string" }
+                    }
                 }
             }
         },

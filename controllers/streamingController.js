@@ -1,87 +1,192 @@
-const fs = require('fs');
-const path = require('path');
 const pool = require('../config/db');
 
-async function StreamingContent(titleFilter) {
+// GET all streaming content with optional title filter
+async function StreamingContent(queryParams) {
     try {
-        let query = `
-            SELECT *
-            FROM streaming_content
-        `;
+        const page = parseInt(queryParams.page) || 1;
+        const limit = parseInt(queryParams.limit) || 10;
+        const offset = (page - 1) * limit;
 
         let params = [];
+        let query = `
+            SELECT * FROM streaming_content
+            ORDER BY id DESC
+            LIMIT $1 OFFSET $2
+        `;
 
-        if (titleFilter) {
-            if (titleFilter !== "" && titleFilter !== "undefined" && titleFilter !== "null"
-                && titleFilter !== null && titleFilter !== undefined && titleFilter !== NaN) {
+        const countQuery = `
+            SELECT COUNT(*) FROM streaming_content
+        `;
+
+        const [result, countResult] = await Promise.all([
+            pool.query(query, [limit, offset]),
+            pool.query(countQuery)
+        ]);
+
+        const total = parseInt(countResult.rows[0].count);
+
+
+        if (queryParams.title) {
+            if (queryParams.title !== "" && queryParams.title !== "undefined" && queryParams.title !== "null"
+                && queryParams.title !== null && queryParams.title !== undefined && queryParams.title !== NaN) {
                 query += " WHERE title ILIKE $1";
-                params.push(`%${titleFilter}%`);
+                params.push(`%${queryParams.title}%`);
             }
         }
-
         query += " ORDER BY id ASC";
 
-        const result = await pool.query(query, params);
-        if (result.rows.length === 0) {
-            return new Error('No streaming content found');
-        } else if (result instanceof Error) {
-            throw result;
-        } else {
-            return result.rows;
+        if (!result || !result.rows) {
+            throw new Error("Database error: invalid result");
         }
+        if (result.rows.length === 0) {
+            throw new Error("No streaming content found");
+        }
+
+        return {
+            page,
+            limit,
+            total,
+            total_pages: Math.ceil(total / limit),
+            data: result.rows
+        };
+
     } catch (error) {
+        console.error("Pagination error:", error);
         throw new Error(error.message);
     }
 }
 
 
-// GET single stream
-async function getStreamDetails(req, res) {
-    const streams = readDB();
-    const stream = streams.find(s => s.id == req.params.id);
+// GET single streaming details by ID
+async function getStreamingDetails(id) {
+    try {
+        let query = `
+            SELECT *
+            FROM streaming_content
+            where id = $1
+        `;
 
-    if (!stream) {
-        return res.status(404).json({ error: 'Stream not found' });
+        const result = await pool.query(query, [id]);
+        if (!result || !result.rows) {
+            throw new Error("Database error: invalid result");
+        }
+        if (result.rows.length === 0) {
+            throw new Error("No streaming content found");
+        }
+        return result.rows[0];
+    } catch (error) {
+        throw new Error(error.message);
     }
-
-    // add more details if needed
-    res.json(stream);
 };
 
-// CREATE stream
-async function createStream(req, res) {
-    const streams = readDB();
-    const newStream = {
-        //elements from req.body
-    };
+// CREATE streaming
+async function createStreaming(body) {
+    try {
 
-    streams.push(newStream);
-    writeDB(streams);
+        const { title, description, thumbnail_url, video_url } = body;
+        if (!title || !description || !thumbnail_url || !video_url) {
+            throw new Error("All fields (title, description, thumbnail_url, video_url) are required");
+        }
 
-    res.status(201).json(newStream);
+        let query = `
+            insert into streaming_content (
+                title, description, thumbnail_url, video_url
+            )
+            values ($1, $2, $3, $4)
+            returning *
+        `;
+
+        const result = await pool.query(query, [
+            body.title,
+            body.description,
+            body.thumbnail_url,
+            body.video_url
+        ]);
+
+        if (!result || !result.rows) {
+            throw new Error("Database error: invalid result");
+        }
+        if (result.rows.length === 0) {
+            throw new Error("No streaming content found");
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        console.error("Error in createStreaming:", error);
+        throw new Error(error.message);
+    }
 };
 
-// UPDATE stream
-async function updateStream(req, res) {
-    const streams = readDB();
-    // add operations to update the stream based on req.params.id and req.body
-    writeDB(streams);
+// UPDATE streaming
+async function updateStreaming(id, body) {
+    try {
 
-    res.json(streams[index]);
+        const { title, description, thumbnail_url, video_url } = body;
+        if (!title && !description && !thumbnail_url && !video_url) {
+            throw new Error("At least one field (title, description, thumbnail_url, video_url) is required");
+        }
+
+        let query = `
+            UPDATE streaming_content
+            SET 
+                title = COALESCE($1, title),
+                description = COALESCE($2, description),
+                thumbnail_url = COALESCE($3, thumbnail_url),
+                video_url = COALESCE($4, video_url),
+                updated_at = NOW()
+            WHERE id = $5
+            RETURNING *
+        `;
+
+        const result = await pool.query(query, [
+            body.title,
+            body.description,
+            body.thumbnail_url,
+            body.video_url,
+            id
+        ]);
+
+        if (!result || !result.rows) {
+            throw new Error("Database error: invalid result");
+        }
+        if (result.rows.length === 0) {
+            throw new Error("No streaming content found");
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        throw new Error(error.message);
+    }
 };
 
-// DELETE stream
-async function deleteStream(req, res) {
-    const streams = readDB();
-    // add operations to delete the stream based on req.params.id
+// DELETE streaming
+async function deleteStreaming(id) {
+    try {
+        let query = `
+            DELETE FROM streaming_content
+            WHERE id = $1
+            RETURNING *
+        `;
 
-    res.json({ message: 'Stream deleted' });
+        const result = await pool.query(query, [id]);
+
+        if (!result || !result.rows) {
+            throw new Error("Database error: invalid result");
+        }
+        if (result.rows.length === 0) {
+            throw new Error("No streaming content found");
+        }
+
+        return result.rows[0];
+    } catch (error) {
+        throw new Error(error.message);
+    }
 };
 
 module.exports = {
     StreamingContent,
-    getStreamDetails,
-    createStream,
-    updateStream,
-    deleteStream
+    getStreamingDetails,
+    createStreaming,
+    updateStreaming,
+    deleteStreaming
 }

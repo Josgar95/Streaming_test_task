@@ -1,8 +1,7 @@
-console.log("Server starting...");
 require("dotenv").config();
+console.log("Server starting...");
 const express = require('express');
 const app = express();
-const streamingRoutes = require('./routes/streaming');
 const swaggerDocs = require('./swagger/swagger'); // importa la funzione
 
 swaggerDocs(app); // inizializza swagger
@@ -10,15 +9,10 @@ swaggerDocs(app); // inizializza swagger
 app.use(express.json());
 
 // Routes
-app.use('/api/streaming', streamingRoutes);
-console.log("ROUTES LOADED:");
-streamingRoutes.stack.forEach(r => {
-    console.log(r.route?.path, Object.keys(r.route?.methods || {}));
-});
+app.use('/api/streaming', require('./routes/streaming'));
+app.use("/api/auth", require("./routes/auth"));
 
-console.log("SERVER FILE PATH:", __filename);
 app.listen(3000, () => {
     console.log('Server running on port 3000');
 });
-console.log("SERVER PID:", process.pid);
 // to launch debug mode: node --inspect server.js

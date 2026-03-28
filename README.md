@@ -12,9 +12,25 @@ For the first assignment i've noticed these 3 bugs:
 
 
 ## Part 2 - Streaming Content API
-The performance problem is cause by the rows with await ... findAll() and the filter, because the findAll loads all the table from the database which, in case of a large amount of data, can require some time and also the await blocks the route until it receives the answer. In the end the effects of this issue is that, depending on the size of the DB, the call could end in timeout, the server can eventually crash and the whole application will be slowed down.
+The performance problem is cause by the rows with await ... findAll() and the filter, because the findAll loads all the table from the database which, in case of a large amount of data, can require some time and also the await blocks the route until it receives the answer. In the end the effect of this issue is that, depending on the size of the DB, the call could end in timeout, the server can eventually crash and the whole application will be slowed down.
 
-To solve this, the solution could be to filter the results from the beginning and to add a pagination by adding a limit.
+To solve this, the solution could be to filter the results by applying the filter within the query itself so that the effort will be demanded to the DB and not to Node.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Key Decisions
+1. I've decided to use manual query and not to rely on ORM because it's easier for me to customize my queries as i wish and to check each value during debug at all stages
 
 
 
