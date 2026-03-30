@@ -1,3 +1,6 @@
+jest.spyOn(console, "log").mockImplementation(() => { });
+jest.spyOn(console, "error").mockImplementation(() => { });
+
 const auth = require("../middleware/auth");
 const jwt = require("jsonwebtoken");
 

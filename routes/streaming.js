@@ -57,7 +57,7 @@ router.get('/', auth, async (req, res) => {
             throw allContent;
         }
         else {
-            res.json(allContent);
+            return res.status(200).json(allContent);
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -128,7 +128,7 @@ router.post('/create_stream', auth, async (req, res) => {
             throw streamingCreation;
         }
         else {
-            res.json(streamingCreation);
+            return res.status(201).json(streamingCreation);
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -138,7 +138,7 @@ router.post('/create_stream', auth, async (req, res) => {
 /**
  * @swagger
  * /api/streaming/update_stream/{id}:
- *   put:
+ *   post:
  *     summary: Update a streaming content by ID
  *     tags:
  *       - Streaming
@@ -162,7 +162,7 @@ router.post('/create_stream', auth, async (req, res) => {
  *       404:
  *         description: Streaming not found
  */
-router.put('/update_stream/:id', auth, async (req, res) => {
+router.post('/update_stream/:id', auth, async (req, res) => {
     try {
         const streamingUpdate = await updateStreaming(req.params.id, req.body);
         if (streamingUpdate instanceof Error) {
@@ -200,12 +200,11 @@ router.put('/update_stream/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         const streamingDeletion = await deleteStreaming(req.params.id);
-        if (streamingDeletion instanceof Error) {
-            throw streamingDeletion;
+        if (!streamingDeletion) {
+            return res.status(404).json({ error: "Streaming not found" });
         }
-        else {
-            res.json({ message: "Stream deleted successfully" });
-        }
+
+        return res.status(200).json({ message: "Streaming deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
