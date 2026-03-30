@@ -1,0 +1,188 @@
+{
+    "info": {
+        "name": "Streaming API",
+        "_postman_id": "streaming-api-collection",
+        "description": "Postman collection for Streaming Content API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth - Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"test@test.com\",\n  \"password\": \"123456\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "auth",
+                        "login"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Streaming - Create",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Test Stream\",\n  \"description\": \"A test description\",\n  \"thumbnail_url\": \"http://example.com/thumb.jpg\",\n  \"video_url\": \"http://example.com/video.mp4\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/streaming/create_stream",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "streaming",
+                        "create_stream"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Streaming - Update",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"title\": \"Updated Title\",\n  \"description\": \"Updated description\",\n  \"thumbnail_url\": \"http://example.com/newthumb.jpg\",\n  \"video_url\": \"http://example.com/newvideo.mp4\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/streaming/update_stream/{{id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "streaming",
+                        "update_stream",
+                        "{{id}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Streaming - Get All",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/streaming",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "streaming"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Streaming - Get By ID",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/streaming/{{id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "streaming",
+                        "{{id}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Streaming - Delete",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/streaming/{{id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "streaming",
+                        "{{id}}"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "id",
+            "value": ""
+        }
+    ]
+}
