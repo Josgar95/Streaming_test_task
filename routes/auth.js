@@ -3,7 +3,7 @@ const router = express.Router();
 const { registerNewUser, loginUser } = require("../controllers/authController");
 
 /**
- * @swagger
+ * @openapi
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
 });
 
 /**
- * @swagger
+ * @openapi
  * /api/auth/login:
  *   post:
  *     summary: Login and receive a JWT token
@@ -56,18 +56,14 @@ router.post("/register", async (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
+ *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
- *       201:
+ *       200:
  *         description: Login successful, returns JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
  *       401:
  *         description: Invalid credentials
  *       500:
@@ -79,12 +75,11 @@ router.post("/login", async (req, res) => {
         if (result.error) {
             return res.status(result.status).json({ error: result.error });
         }
-        return res.status(201).json({ token: result.token });
+        return res.status(200).json({ token: result.token });
     } catch (err) {
         console.error("Login error:", err);
         return res.status(500).json({ error: "Internal server error" });
     }
-
 });
 
 module.exports = router;

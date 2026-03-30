@@ -28,6 +28,78 @@ describe("Streaming API", () => {
         token = res.body.token;
     });
 
+    // test per login
+    test("POST /api/auth/login → wrong email returns 401", async () => {
+        const res = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "wrong@test.com", password: "123456" });
+
+        expect(res.status).toBe(401);
+    });
+
+    test("POST /api/auth/login → wrong password returns 401", async () => {
+        const res = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "test@test.com", password: "wrongpass" });
+
+        expect(res.status).toBe(401);
+    });
+
+    test("POST /api/auth/login → missing fields returns 400", async () => {
+        const res = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "test@test.com" });
+
+        expect(res.status).toBe(400);
+    });
+
+    test("POST /api/auth/login → empty body returns 400", async () => {
+        const res = await request(app)
+            .post("/api/auth/login")
+            .send({});
+
+        expect(res.status).toBe(400);
+    });
+
+    // test per streaming
+    test("POST /api/streaming/create_stream → missing token returns 401", async () => {
+        const res = await request(app)
+            .post("/api/streaming/create_stream")
+            .send({
+                title: "Test",
+                description: "Desc",
+                thumbnail_url: "http://example.com",
+                video_url: "http://example.com"
+            });
+
+        expect(res.status).toBe(401);
+    });
+
+    test("POST /api/streaming/create_stream → invalid token returns 403", async () => {
+        const res = await request(app)
+            .post("/api/streaming/create_stream")
+            .set("Authorization", "Bearer invalidtoken")
+            .send({
+                title: "Test",
+                description: "Desc",
+                thumbnail_url: "http://example.com",
+                video_url: "http://example.com"
+            });
+
+        expect(res.status).toBe(403);
+    });
+
+    test("POST /api/streaming/create_stream → missing fields returns 400", async () => {
+        const res = await request(app)
+            .post("/api/streaming/create_stream")
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                title: "Only title"
+            });
+
+        expect(res.status).toBe(400);
+    });
+
     test("POST /api/streaming/create_stream → create a streaming", async () => {
         const res = await request(app)
             .post("/api/streaming/create_stream")
@@ -44,9 +116,23 @@ describe("Streaming API", () => {
         createdId = res.body.id;
     });
 
-    test("POST /api/streaming/update_stream/:id → update streaming", async () => {
+    test("PUT /api/streaming/update_stream/:id → invalid id returns 404", async () => {
         const res = await request(app)
-            .post(`/api/streaming/update_stream/${createdId}`)
+            .put("/api/streaming/update_stream/999999")
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                title: "Updated",
+                description: "Updated",
+                thumbnail_url: "http://example.com",
+                video_url: "http://example.com"
+            });
+
+        expect(res.status).toBe(404);
+    });
+
+    test("PUT /api/streaming/update_stream/:id → update streaming", async () => {
+        const res = await request(app)
+            .put(`/api/streaming/update_stream/${createdId}`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 title: "Updated Title",
@@ -73,6 +159,14 @@ describe("Streaming API", () => {
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body.data)).toBe(true);
         expect(res.body.data.length).toBeGreaterThan(0);
+    });
+
+    test("DELETE /api/streaming/:id → invalid id returns 404", async () => {
+        const res = await request(app)
+            .delete("/api/streaming/999999")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.status).toBe(404);
     });
 
     test("DELETE /api/streaming/:id → elimina stream", async () => {

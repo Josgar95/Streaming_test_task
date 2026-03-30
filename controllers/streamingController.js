@@ -6,53 +6,61 @@ async function StreamingContent(queryParams) {
         const page = parseInt(queryParams.page) || 1;
         const limit = parseInt(queryParams.limit) || 10;
         const offset = (page - 1) * limit;
+        let query = `
+            SELECT *
+            FROM streaming_content
+        `;
 
         let params = [];
-        let query = `
-            SELECT * FROM streaming_content
-            ORDER BY id DESC
-            LIMIT $1 OFFSET $2
-        `;
+        let paramIndex = 1;
 
-        const countQuery = `
-            SELECT COUNT(*) FROM streaming_content
-        `;
+        if (queryParams.title && queryParams.title.trim() !== "") {
+            query += ` WHERE title ILIKE $${paramIndex}`;
+            params.push(`%${queryParams.title}%`);
+            paramIndex++;
+        }
+
+        query += ` ORDER BY id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        params.push(limit, offset);
+
+        const countQuery = `SELECT COUNT(*) FROM streaming_content`;
 
         const [result, countResult] = await Promise.all([
-            pool.query(query, [limit, offset]),
+            pool.query(query, params),
             pool.query(countQuery)
         ]);
-
         const total = parseInt(countResult.rows[0].count);
 
-
-        if (queryParams.title) {
-            if (queryParams.title !== "" && queryParams.title !== "undefined" && queryParams.title !== "null"
-                && queryParams.title !== null && queryParams.title !== undefined && queryParams.title !== NaN) {
-                query += " WHERE title ILIKE $1";
-                params.push(`%${queryParams.title}%`);
-            }
-        }
-        query += " ORDER BY id ASC";
-
         if (!result || !result.rows) {
-            throw new Error("Database error: invalid result");
+            return {
+                status: 500,
+                error: "Database error: invalid result"
+            };
         }
+
         if (result.rows.length === 0) {
-            throw new Error("No streaming content found");
+            return {
+                status: 404,
+                error: "No streaming content found"
+            };
         }
 
         return {
-            page,
-            limit,
-            total,
-            total_pages: Math.ceil(total / limit),
-            data: result.rows
+            status: 200,
+            data: {
+                page,
+                limit,
+                total,
+                total_pages: Math.ceil(total / limit),
+                data: result.rows
+            }
         };
-
     } catch (error) {
         console.error("Pagination error:", error);
-        throw new Error(error.message);
+        return {
+            status: 500,
+            error: error.message || "Internal server error"
+        };
     }
 }
 
@@ -60,24 +68,38 @@ async function StreamingContent(queryParams) {
 // GET single streaming details by ID
 async function getStreamingDetails(id) {
     try {
-        let query = `
+        const query = `
             SELECT *
             FROM streaming_content
-            where id = $1
+            WHERE id = $1
         `;
-
         const result = await pool.query(query, [id]);
+
         if (!result || !result.rows) {
-            throw new Error("Database error: invalid result");
+            return {
+                status: 500,
+                error: "Database error: invalid result"
+            };
         }
+
         if (result.rows.length === 0) {
-            throw new Error("No streaming content found");
+            return {
+                status: 404,
+                error: "No streaming content found"
+            };
         }
-        return result.rows[0];
+
+        return {
+            status: 200,
+            data: result.rows[0]
+        };
     } catch (error) {
-        throw new Error(error.message);
+        return {
+            status: 500,
+            error: error.message || "Internal server error"
+        };
     }
-};
+}
 
 // CREATE streaming
 async function createStreaming(body) {
@@ -85,7 +107,10 @@ async function createStreaming(body) {
 
         const { title, description, thumbnail_url, video_url } = body;
         if (!title || !description || !thumbnail_url || !video_url) {
-            throw new Error("All fields (title, description, thumbnail_url, video_url) are required");
+            return {
+                status: 400,
+                error: "All fields (title, description, thumbnail_url, video_url) are required"
+            };
         }
 
         let query = `
@@ -104,29 +129,44 @@ async function createStreaming(body) {
         ]);
 
         if (!result || !result.rows) {
-            throw new Error("Database error: invalid result");
+            return {
+                status: 500,
+                error: "Database error: invalid result"
+            };
         }
         if (result.rows.length === 0) {
-            throw new Error("No streaming content found");
+            return {
+                status: 500,
+                error: "No streaming content found"
+            };
         }
 
-        return result.rows[0];
+        return {
+            status: 201,
+            data: result.rows[0]
+        };
+
     } catch (error) {
         console.error("Error in createStreaming:", error);
-        throw new Error(error.message);
+        return {
+            status: 500,
+            error: error.message || "Internal server error"
+        };
     }
 };
 
 // UPDATE streaming
 async function updateStreaming(id, body) {
     try {
-
         const { title, description, thumbnail_url, video_url } = body;
         if (!title && !description && !thumbnail_url && !video_url) {
-            throw new Error("At least one field (title, description, thumbnail_url, video_url) is required");
+            return {
+                status: 400,
+                error: "At least one field (title, description, thumbnail_url, video_url) is required"
+            };
         }
 
-        let query = `
+        const query = `
             UPDATE streaming_content
             SET 
                 title = COALESCE($1, title),
@@ -139,49 +179,73 @@ async function updateStreaming(id, body) {
         `;
 
         const result = await pool.query(query, [
-            body.title,
-            body.description,
-            body.thumbnail_url,
-            body.video_url,
+            title,
+            description,
+            thumbnail_url,
+            video_url,
             id
         ]);
 
         if (!result || !result.rows) {
-            throw new Error("Database error: invalid result");
-        }
-        if (result.rows.length === 0) {
-            throw new Error("No streaming content found");
+            return {
+                status: 500,
+                error: "Database error: invalid result"
+            };
         }
 
-        return result.rows[0];
+        if (result.rows.length === 0) {
+            return {
+                status: 404,
+                error: "No streaming content found"
+            };
+        }
+
+        return {
+            status: 200,
+            data: result.rows[0]
+        };
     } catch (error) {
-        throw new Error(error.message);
+        return {
+            status: 500,
+            error: error.message || "Internal server error"
+        };
     }
-};
+}
 
 // DELETE streaming
 async function deleteStreaming(id) {
     try {
-        let query = `
+        const query = `
             DELETE FROM streaming_content
             WHERE id = $1
             RETURNING *
         `;
-
         const result = await pool.query(query, [id]);
-
         if (!result || !result.rows) {
-            throw new Error("Database error: invalid result");
-        }
-        if (result.rows.length === 0) {
-            throw new Error("No streaming content found");
+            return {
+                status: 500,
+                error: "Database error: invalid result"
+            };
         }
 
-        return result.rows[0];
+        if (result.rows.length === 0) {
+            return {
+                status: 404,
+                error: "No streaming content found"
+            };
+        }
+
+        return {
+            status: 200,
+            data: result.rows[0]
+        };
     } catch (error) {
-        throw new Error(error.message);
+        return {
+            status: 500,
+            error: error.message || "Internal server error"
+        };
     }
-};
+}
 
 module.exports = {
     StreamingContent,

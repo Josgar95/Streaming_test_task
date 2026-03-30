@@ -11,7 +11,7 @@ const {
 
 
 /**
- * @swagger
+ * @openapi
  * /api/streaming:
  *   get:
  *     summary: Obtain all streaming content
@@ -53,11 +53,11 @@ const {
 router.get('/', auth, async (req, res) => {
     try {
         const allContent = await StreamingContent(req.query);
-        if (allContent instanceof Error) {
-            throw allContent;
+        if (allContent.error) {
+            return res.status(allContent.status).json({ error: allContent.error });
         }
         else {
-            return res.status(200).json(allContent);
+            return res.status(200).json(allContent.data);
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -68,7 +68,7 @@ router.get('/', auth, async (req, res) => {
 
 
 /**
- * @swagger
+ * @openapi
  * /api/streaming/{id}:
  *   get:
  *     summary: Get stream details by ID
@@ -91,11 +91,11 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
     try {
         const streamingDetail = await getStreamingDetails(req.params.id);
-        if (streamingDetail instanceof Error) {
-            throw streamingDetail;
+        if (streamingDetail.error) {
+            return res.status(streamingDetail.status).json({ error: streamingDetail.error });
         }
         else {
-            res.json(streamingDetail);
+            res.json(streamingDetail.data);
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -103,7 +103,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 /**
- * @swagger
+ * @openapi
  * /api/streaming/create_stream:
  *   post:
  *     summary: Create a new streaming content
@@ -124,21 +124,21 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/create_stream', auth, async (req, res) => {
     try {
         const streamingCreation = await createStreaming(req.body);
-        if (streamingCreation instanceof Error) {
-            throw streamingCreation;
+        if (streamingCreation.error) {
+            return res.status(streamingCreation.status).json({ error: streamingCreation.error });
         }
         else {
-            return res.status(201).json(streamingCreation);
+            return res.status(201).json(streamingCreation.data);
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 });
 
 /**
- * @swagger
+ * @openapi
  * /api/streaming/update_stream/{id}:
- *   post:
+ *   put:
  *     summary: Update a streaming content by ID
  *     tags:
  *       - Streaming
@@ -162,14 +162,14 @@ router.post('/create_stream', auth, async (req, res) => {
  *       404:
  *         description: Streaming not found
  */
-router.post('/update_stream/:id', auth, async (req, res) => {
+router.put('/update_stream/:id', auth, async (req, res) => {
     try {
         const streamingUpdate = await updateStreaming(req.params.id, req.body);
-        if (streamingUpdate instanceof Error) {
-            throw streamingUpdate;
+        if (streamingUpdate.error) {
+            return res.status(streamingUpdate.status).json({ error: streamingUpdate.error });
         }
         else {
-            res.json(streamingUpdate);
+            return res.status(200).json(streamingUpdate.data);
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -177,7 +177,7 @@ router.post('/update_stream/:id', auth, async (req, res) => {
 });
 
 /**
- * @swagger
+ * @openapi
  * /api/streaming/{id}:
  *   delete:
  *     summary: Delete a streaming content by ID
@@ -200,8 +200,8 @@ router.post('/update_stream/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         const streamingDeletion = await deleteStreaming(req.params.id);
-        if (!streamingDeletion) {
-            return res.status(404).json({ error: "Streaming not found" });
+        if (streamingDeletion.error) {
+            return res.status(streamingDeletion.status).json({ error: streamingDeletion.error });
         }
 
         return res.status(200).json({ message: "Streaming deleted successfully" });

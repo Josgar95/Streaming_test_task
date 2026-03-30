@@ -7,7 +7,7 @@ const options = {
         info: {
             title: "Streaming API",
             version: "1.0.0",
-            description: "API for managing streaming content."
+            description: "API for managing streaming content with JWT authentication."
         },
         servers: [
             {
@@ -24,6 +24,20 @@ const options = {
                 }
             },
             schemas: {
+                LoginRequest: {
+                    type: "object",
+                    required: ["email", "password"],
+                    properties: {
+                        email: { type: "string" },
+                        password: { type: "string" }
+                    }
+                },
+                LoginResponse: {
+                    type: "object",
+                    properties: {
+                        token: { type: "string" }
+                    }
+                },
                 StreamingContent: {
                     type: "object",
                     properties: {
@@ -45,29 +59,18 @@ const options = {
                         thumbnail_url: { type: "string" },
                         video_url: { type: "string" }
                     }
-                },
-                StreamingUpdate: {
-                    type: "object",
-                    properties: {
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        thumbnail_url: { type: "string" },
-                        video_url: { type: "string" }
-                    }
                 }
             }
         },
         security: [
-            {
-                bearerAuth: []
-            }
+            { bearerAuth: [] }
         ]
     },
-    apis: ["./routes/*.js"]
+    apis: ["./routes/*.js"] // <-- Swagger leggerà i commenti JSDoc nelle route
 };
 
 const swaggerSpec = swaggerJsDoc(options);
 
 module.exports = (app) => {
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
